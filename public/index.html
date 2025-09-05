@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNS SPF Lookup Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .input-section {
+            margin-bottom: 40px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .input-field {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .input-field label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .input-field input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-field input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #495057;
+            border: 2px solid #e1e5e9;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e1e5e9;
+        }
+
+        .results-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .results-count {
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .tree-container {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .tree-node {
+            margin-bottom: 15px;
+        }
+
+        .domain-node {
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .domain-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #495057;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .domain-icon {
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .spf-record {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin: 10px 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.85rem;
+            color: #959aa0;
+            /* Improved word breaking for SPF records */
+            word-break: break-word;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            line-height: 1.4;
+        }
+
+        .spf-record-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .ip-ranges {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .ip-range {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+            color: #0066cc;
+            transition: all 0.3s ease;
+            width: fit-content;
+            max-width: 100%;
+        }
+
+        .ip-range.highlighted {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+            animation: pulse 1s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .children {
+            margin-left: 30px;
+            padding-left: 20px;
+            border-left: 2px solid #e1e5e9;
+            margin-top: 15px;
+        }
+
+        .error-node {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .ip-check-section {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .ip-check-results {
+            margin-top: 15px;
+        }
+
+        .ip-check-section {
+            margin-bottom: 20px;
+        }
+
+        .ip-check-banner {
+            background: #f8f9fa;
+            border-bottom: 1px solid #e1e5e9;
+            padding: 0;
+            margin: 0;
+        }
+
+        .ip-check-banner .ip-check-results {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px 30px;
+        }
+
+        .spf-anchor-link {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+        }
+
+        .spf-anchor-link:hover {
+            background: rgba(0, 123, 255, 0.1);
+            text-decoration: underline;
+        }
+
+        /* Smooth scroll behavior for anchor links */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Highlight target domain when jumped to */
+        .domain-node:target {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            animation: highlightPulse 2s ease-in-out;
+        }
+
+        @keyframes highlightPulse {
+            0% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0.1); }
+            100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
+        }
+
+        .match-result {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .match-result.authorized {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .match-result.unauthorized {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .match-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+
+        .match-result.authorized .match-icon {
+            background: #28a745;
+        }
+
+        .match-result.unauthorized .match-icon {
+            background: #dc3545;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .input-field {
+                min-width: 100%;
+            }
+            
+            .button-group {
+                justify-content: center;
+            }
+            
+            .children {
+                margin-left: 15px;
+                padding-left: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌐 DNS SPF Lookup Tool</h1>
+            <p>Analyze SPF records and check IP authorization for domains</p>
+        </div>
+
+        <!-- IP Authorization Banner -->
+        <div class="ip-check-banner" id="ipCheckSection" style="display: none;">
+            <div class="ip-check-results" id="ipCheckResults">
+                <!-- IP check results will be rendered here -->
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="input-section">
+                <div class="input-group">
+                    <div class="input-field">
+                        <label for="domain">Domain Name</label>
+                        <input type="text" id="domain" placeholder="e.g., example.com" value="google.com">
+                    </div>
+                    <div class="input-field">
+                        <label for="ip">IP Address (optional)</label>
+                        <input type="text" id="ip" placeholder="e.g., 192.168.1.1">
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="lookupSPF()">
+                        <span>🔍</span> Lookup SPF Records
+                    </button>
+                    <button class="btn btn-secondary" onclick="checkIP()" id="checkIpBtn" disabled>
+                        <span>🎯</span> Check IP Authorization
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearResults()">
+                        <span>🗑️</span> Clear Results
+                    </button>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Looking up SPF records...</p>
+            </div>
+
+            <div class="results-section" id="results">
+                <div class="results-header">
+                    <div class="results-title" id="resultsTitle">SPF Records</div>
+                    <div class="results-count" id="resultsCount">0 IP ranges</div>
+                </div>
+                
+                <div class="tree-container" id="treeContainer">
+                    <!-- SPF tree will be rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSpfData = null;
+        let allIpRanges = [];
+
+        async function lookupSPF() {
+            const domain = document.getElementById('domain').value.trim();
+            if (!domain) {
+                alert('Please enter a domain name');
+                return;
+            }
+
+            showLoading(true);
+            hideResults();
+            
+            try {
+                const response = await fetch(`/api/spf/${encodeURIComponent(domain)}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                currentSpfData = data;
+                allIpRanges = collectAllRanges(data);
+                renderResults(data);
+                enableIPCheck();
+                
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function checkIP() {
+            const ip = document.getElementById('ip').value.trim();
+            const domain = document.getElementById('domain').value.trim();
+            
+            if (!ip || !domain || !currentSpfData) {
+                alert('Please enter both domain and IP address, and lookup SPF records first');
+                return;
+            }
+
+            // Clear previous highlights
+            clearHighlights();
+            
+            try {
+                const response = await fetch('/api/check-ip', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ ip, domain })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                renderIPCheckResults(data);
+                highlightMatches(data.matches);
+                
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        function collectAllRanges(node, ranges = []) {
+            if (node.ipRanges && node.ipRanges.length > 0) {
+                ranges.push(...node.ipRanges.map(range => ({
+                    range,
+                    domain: node.domain
+                })));
+            }
+            
+            if (node.children) {
+                node.children.forEach(child => collectAllRanges(child, ranges));
+            }
+            
+            return ranges;
+        }
+
+        function renderResults(data) {
+            const title = document.getElementById('resultsTitle');
+            const count = document.getElementById('resultsCount');
+            const container = document.getElementById('treeContainer');
+            
+            title.textContent = `SPF Records for ${data.domain}`;
+            count.textContent = `${allIpRanges.length} IP ranges`;
+            
+            container.innerHTML = renderTreeNode(data);
+            
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function generateDomainId(domain) {
+            // Create a safe ID by replacing dots and other special characters
+            return 'spf-domain-' + domain.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+        }
+
+        function renderTreeNode(node) {
+            let html = '<div class="tree-node">';
+            
+            // Generate a unique ID for this domain node
+            const domainId = generateDomainId(node.domain);
+            
+            html += `<div class="domain-node" id="${domainId}">`;
+            html += `<div class="domain-name">`;
+            html += `<div class="domain-icon">🌐</div>`;
+            html += `${node.domain}`;
+            html += '</div>';
+            
+            if (node.spfRecord) {
+                // html += '<div class="spf-record-label">SPF Record:</div>';
+                html += `<div class="spf-record">${node.spfRecord}</div>`;
+            }
+            
+            if (node.error) {
+                html += `<div class="error-node">❌ ${node.error}</div>`;
+            }
+            
+            if (node.ipRanges && node.ipRanges.length > 0) {
+                html += '<div class="ip-ranges">';
+                node.ipRanges.forEach(range => {
+                    html += `<span class="ip-range" data-range="${range}" data-domain="${node.domain}">${range}</span>`;
+                });
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            
+            if (node.children && node.children.length > 0) {
+                html += '<div class="children">';
+                node.children.forEach(child => {
+                    html += renderTreeNode(child);
+                });
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+        function renderIPCheckResults(data) {
+            const container = document.getElementById('ipCheckResults');
+            const section = document.getElementById('ipCheckSection');
+            
+            let html = '';
+            
+            if (data.isAuthorized) {
+                html += '<div class="match-result authorized">';
+                html += '<div class="match-icon">✓</div>';
+                html += `<div><strong>Authorized!</strong> IP ${data.ip} is authorized to send mail for ${data.domain}`;
+                
+                // Add match details with anchor links
+                if (data.matches && data.matches.length > 0) {
+                    const matchLinks = data.matches.map(match => {
+                        const domainId = generateDomainId(match.domain);
+                        return `<a href="#${domainId}" class="spf-anchor-link">${match.range} from ${match.domain}</a>`;
+                    }).join(', ');
+                    html += ` - Matches range ${matchLinks}`;
+                }
+                html += '</div>';
+                html += '</div>';
+            } else {
+                html += '<div class="match-result unauthorized">';
+                html += '<div class="match-icon">✗</div>';
+                html += `<div><strong>Not Authorized!</strong> IP ${data.ip} is not authorized to send mail for ${data.domain}</div>`;
+                html += '</div>';
+            }
+            
+            container.innerHTML = html;
+            section.style.display = 'block';
+        }
+
+        function highlightMatches(matches) {
+            matches.forEach(match => {
+                const elements = document.querySelectorAll(`[data-range="${match.range}"][data-domain="${match.domain}"]`);
+                elements.forEach(el => {
+                    el.classList.add('highlighted');
+                });
+            });
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.ip-range.highlighted').forEach(el => {
+                el.classList.remove('highlighted');
+            });
+        }
+
+        function enableIPCheck() {
+            document.getElementById('checkIpBtn').disabled = false;
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function hideResults() {
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('ipCheckSection').style.display = 'none';
+        }
+
+        function clearResults() {
+            hideResults();
+            clearHighlights();
+            currentSpfData = null;
+            allIpRanges = [];
+            document.getElementById('checkIpBtn').disabled = true;
+            document.getElementById('ip').value = '';
+        }
+
+        // Allow Enter key to trigger lookup
+        document.getElementById('domain').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                lookupSPF();
+            }
+        });
+
+        document.getElementById('ip').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !document.getElementById('checkIpBtn').disabled) {
+                checkIP();
+            }
+        });
+    </script>
+</body>
+</html>

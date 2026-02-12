@@ -13,7 +13,8 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+            background: #F8F8FF;
             min-height: 100vh;
             padding: 20px;
         }
@@ -84,6 +85,11 @@
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-field input::placeholder {
+            /* font-style: italic; */
+            opacity: 0.7;
         }
 
         .button-group {
@@ -447,7 +453,7 @@
                 <div class="input-group">
                     <div class="input-field">
                         <label for="domain">Domain Name</label>
-                        <input type="text" id="domain" placeholder="e.g., example.com" value="google.com">
+                        <input type="text" id="domain" placeholder="e.g., google.com.au">
                     </div>
                     <div class="input-field">
                         <label for="ip">IP Address (optional)</label>
